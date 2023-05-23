@@ -7,9 +7,11 @@ const ACTIVE_SITE = location.host;
 const CSS_MAP = getCssMap();
 
 // MainApp
+// const throttledInject = throttle(btn_inject_base, 200);
+
 // document.addEventListener("DOMContentLoaded", () => {document.querySelectorAll('.' + CSS_MAP.mainFeed[0])[0].addEventListener('DOMSubtreeModified', btn_inject_base);});
 // document.addEventListener("DOMContentLoaded", btn_inject_base);
-// document.querySelectorAll('.' + CSS_MAP.mainFeed[0])[0].addEventListener('DOMSubtreeModified', btn_inject_base);
+document.querySelectorAll('.' + CSS_MAP.mainFeed[0])[0].addEventListener('DOMSubtreeModified', throttle(btn_inject_base, 200));
 btn_inject_base();
 
 
@@ -122,7 +124,26 @@ function getCssMap() {
 }
 
 
-
+function throttle(func, delay) {
+    let timeoutId;
+    let lastExecutedTime = 0;
+    
+    return function(...args) {
+    const currentTime = Date.now();
+    
+    if (currentTime - lastExecutedTime >= delay) {
+    func.apply(this, args);
+    lastExecutedTime = currentTime;
+    }
+    else {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+    func.apply(this, args);
+    lastExecutedTime = Date.now();
+    }, delay);
+    }
+    };
+    }
 
 //TODO: Track page change? When URL change https://vk.com/feed resetr first_scan | FOR VK
 // Tumblrr, Facebook, blogpost, twitter, instagramm
