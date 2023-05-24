@@ -3,6 +3,9 @@
 // 	'hide_filtered_content': false,
 // };
 
+chrome.runtime.sendMessage({action: 'import_jszip'});
+// testZip();
+
 const ACTIVE_SITE = location.host;
 const CSS_MAP = getCssMap();
 
@@ -156,5 +159,17 @@ function throttle(func, delay) {
     };
 }
 
+// function testZip()
+// {
+//     var zip = new JSZip();
+// zip.file("Hello.txt", "Hello World\n");
+// var img = zip.folder("images");
+// img.file("smile.gif", imgData, {base64: true});
+// zip.generateAsync({type:"blob"})
+// .then(function(content) {
+//     // see FileSaver.js
+//     saveAs(content, "example.zip");
+// });
+// }
 //TODO: Track page change? When URL change https://vk.com/feed resetr first_scan | FOR VK
 // Tumblrr, Facebook, blogpost, twitter, instagramm
