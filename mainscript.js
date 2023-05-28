@@ -79,16 +79,15 @@ function inject_tumblr(post) {
 function btn_save() {
     var postText = this.closest('.' + CSS_MAP.post[0]).querySelectorAll('.' + CSS_MAP.postText)[0].innerHTML;
     postText = processText(postText);
-    alert(postText);
-    var zip = jsZip(postText);
 
-    let a = document.createElement('a');
-    // let blob = new Blob([postText], { type: 'text/plain' });
-    alert(zip);
-    let url = URL.createObjectURL(zip);
-    a.setAttribute('href', url);
-    a.setAttribute('download', this);
-    a.click();
+    // Send the message to the background script
+    chrome.runtime.sendMessage({action: 'jszip', images: imageUrls, text: myString }, function (response) {
+        console.log("Response from background script:", response);
+        }).then(function(zip) {
+            let blob = new Blob([zip], { type: 'application/zip' });
+            let url = URL.createObjectURL(blob);
+            download(url, "placeholder" + ".zip");
+        })
 }
 
 
@@ -161,9 +160,21 @@ function throttle(func, delay) {
     };
 }
 
-function jsZip(text)
-{
-    chrome.runtime.sendMessage({action: 'import_jszip', content: text});
+function download(url, filename) {
+    fetch(url, {
+        mode: 'no-cors' 
+    }).then((transfer) => {
+        return transfer.blob();                 // RETURN DATA TRANSFERED AS BLOB
+    }).then((bytes) => {
+        let elm = document.createElement('a');  // CREATE A LINK ELEMENT IN DOM
+        elm.href = URL.createObjectURL(bytes);  // SET LINK ELEMENTS CONTENTS
+        elm.setAttribute('download', filename); // SET ELEMENT CREATED 'ATTRIBUTE' TO DOWNLOAD, FILENAME PARAM AUTOMATICALLY
+        elm.click()                             // TRIGGER ELEMENT TO DOWNLOAD
+    }).catch((error) => {
+        console.log(error);                     // OUTPUT ERRORS, SUCH AS CORS WHEN TESTING NON LOCALLY
+    })
 }
+
+
 //TODO: Track page change? When URL change https://vk.com/feed resetr first_scan | FOR VK
 // Tumblrr, Facebook, blogpost, twitter, instagramm
