@@ -5,11 +5,11 @@
     "manifest_version": 3,
     "author": "est-R",
     "action":{
-        "default_popup": "index.html",
+        "default_popup": "./assets/index.html",
         "default_title": "post2txt"
     },
     "icons": {
-      "128": "icon128.png"
+      "128": "./assets/icon128.png"
     },  
     "background": {
         "service_worker": "background.js",
