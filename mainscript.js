@@ -3,9 +3,6 @@
 // 	'hide_filtered_content': false,
 // };
 
-chrome.runtime.sendMessage({action: 'import_jszip'});
-// testZip();
-
 const ACTIVE_SITE = location.host;
 const CSS_MAP = getCssMap();
 
@@ -14,6 +11,9 @@ const CSS_MAP = getCssMap();
 // if (location.host + location.pathname == "vk.com/feed") { btnFeedClass = 0 }
 // else { btnFeedClass = 1 };
 document.addEventListener("DOMContentLoaded", () => {document.querySelectorAll(CSS_MAP.mainFeed[0])[0].addEventListener('DOMSubtreeModified', throttle(btn_inject_base, 200))});
+window.addEventListener('locationchange', function () {
+    alert('location changed!');
+});
 // document.addEventListener("DOMContentLoaded", btn_inject_base);
 // document.querySelectorAll('.' + CSS_MAP.mainFeed[0])[0].addEventListener('DOMSubtreeModified', throttle(btn_inject_base, 200));
 btn_inject_base();
@@ -80,10 +80,12 @@ function btn_save() {
     var postText = this.closest('.' + CSS_MAP.post[0]).querySelectorAll('.' + CSS_MAP.postText)[0].innerHTML;
     postText = processText(postText);
     alert(postText);
-    //save string as file
+    var zip = jsZip(postText);
+
     let a = document.createElement('a');
-    let blob = new Blob([postText], { type: 'text/plain' });
-    let url = URL.createObjectURL(blob);
+    // let blob = new Blob([postText], { type: 'text/plain' });
+    alert(zip);
+    let url = URL.createObjectURL(zip);
     a.setAttribute('href', url);
     a.setAttribute('download', this);
     a.click();
@@ -159,17 +161,9 @@ function throttle(func, delay) {
     };
 }
 
-// function testZip()
-// {
-//     var zip = new JSZip();
-// zip.file("Hello.txt", "Hello World\n");
-// var img = zip.folder("images");
-// img.file("smile.gif", imgData, {base64: true});
-// zip.generateAsync({type:"blob"})
-// .then(function(content) {
-//     // see FileSaver.js
-//     saveAs(content, "example.zip");
-// });
-// }
+function jsZip(text)
+{
+    chrome.runtime.sendMessage({action: 'import_jszip', content: text});
+}
 //TODO: Track page change? When URL change https://vk.com/feed resetr first_scan | FOR VK
 // Tumblrr, Facebook, blogpost, twitter, instagramm
