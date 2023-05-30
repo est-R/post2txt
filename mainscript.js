@@ -80,12 +80,15 @@ function btn_save() {
     var postText = this.closest('.' + CSS_MAP.post[0]).querySelectorAll('.' + CSS_MAP.postText)[0].innerHTML;
     postText = processText(postText);
 
+    var imageUrls = ["https://static.wikia.nocookie.net/aesthetics/images/c/cd/Fantasy_World.jpg/"] // Get somehow
+
     // Send the message to the background script
-    chrome.runtime.sendMessage({action: 'jszip', images: imageUrls, text: myString }, function (response) {
-        console.log("Response from background script:", response);
-        }).then(function(zip) {
-            let blob = new Blob([zip], { type: 'application/zip' });
-            let url = URL.createObjectURL(blob);
+    chrome.runtime.sendMessage({action: "jszip", images: imageUrls, text: postText }, 
+        function(response) {
+            console.log(response.zip);
+            const zipBlob = base64ToBlob(response.zip)
+            console.log(zipBlob);
+            const url = URL.createObjectURL(zipBlob);
             download(url, "placeholder" + ".zip");
         })
 }
@@ -164,17 +167,30 @@ function download(url, filename) {
     fetch(url, {
         mode: 'no-cors' 
     }).then((transfer) => {
-        return transfer.blob();                 // RETURN DATA TRANSFERED AS BLOB
+        return transfer.blob();                 
     }).then((bytes) => {
-        let elm = document.createElement('a');  // CREATE A LINK ELEMENT IN DOM
-        elm.href = URL.createObjectURL(bytes);  // SET LINK ELEMENTS CONTENTS
-        elm.setAttribute('download', filename); // SET ELEMENT CREATED 'ATTRIBUTE' TO DOWNLOAD, FILENAME PARAM AUTOMATICALLY
-        elm.click()                             // TRIGGER ELEMENT TO DOWNLOAD
+        let elm = document.createElement('a'); 
+        elm.href = URL.createObjectURL(bytes); 
+        elm.setAttribute('download', filename); 
+        elm.click()                            
     }).catch((error) => {
-        console.log(error);                     // OUTPUT ERRORS, SUCH AS CORS WHEN TESTING NON LOCALLY
+        console.log(error);                    
     })
 }
 
+// Function to convert Base64 to Blob
+function base64ToBlob(base64String) {
+    const parts = base64String.split(';base64,');
+    const data = atob(parts[1]);
+    const dataLength = data.length;
+    const byteArray = new Uint8Array(dataLength);
+
+    for (let i = 0; i < dataLength; ++i) {
+        byteArray[i] = data.charCodeAt(i);
+    }
+    const blob = new Blob([byteArray], {type: "application/zip"});
+    return blob;
+}
 
 //TODO: Track page change? When URL change https://vk.com/feed resetr first_scan | FOR VK
 // Tumblrr, Facebook, blogpost, twitter, instagramm
