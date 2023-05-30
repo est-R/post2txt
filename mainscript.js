@@ -6,11 +6,11 @@
 const ACTIVE_SITE = location.host;
 const CSS_MAP = getCssMap();
 
-// MainApp
+// ====MainApp
 // const throttledInject = throttle(btn_inject_base, 200);
 // if (location.host + location.pathname == "vk.com/feed") { btnFeedClass = 0 }
 // else { btnFeedClass = 1 };
-document.addEventListener("DOMContentLoaded", () => {document.querySelectorAll(CSS_MAP.mainFeed[0])[0].addEventListener('DOMSubtreeModified', throttle(btn_inject_base, 200))});
+document.addEventListener("DOMContentLoaded", () => { document.querySelectorAll(CSS_MAP.mainFeed[0])[0].addEventListener('DOMSubtreeModified', throttle(btn_inject_base, 200)) });
 window.addEventListener('locationchange', function () {
     alert('location changed!');
 });
@@ -19,7 +19,7 @@ window.addEventListener('locationchange', function () {
 btn_inject_base();
 
 
-// ButtonInjection
+// ====ButtonInjection
 function btn_inject_base() {
     let posts = document.querySelectorAll('.' + CSS_MAP.post[0]);
 
@@ -37,13 +37,10 @@ function btn_inject_base() {
     }
 }
 
-// Button injection
-
 function inject_vk(post) {
     post.setAttribute('postsaver_id:', Math.random().toString(16).slice(2)) // Generate custom post id
     var postText = post.querySelectorAll('.' + CSS_MAP.postText)[0];
-    if (postText)
-    {
+    if (postText) {
         postText.classList.add('postsaver_postText');
     }
 
@@ -75,19 +72,19 @@ function inject_tumblr(post) {
     buttonContainer.querySelectorAll(".postsaver_btn")[0].addEventListener("click", btn_save);
 }
 
-
+// ====SAVE
 function btn_save() {
     var postText = this.closest('.' + CSS_MAP.post[0]).querySelectorAll('.' + CSS_MAP.postText)[0].innerHTML;
     postText = processText(postText);
 
-    var imageUrls = ["https://static.wikia.nocookie.net/aesthetics/images/c/cd/Fantasy_World.jpg/"] // Get somehow
+    // var imageUrls = ["https://static.wikia.nocookie.net/aesthetics/images/c/cd/Fantasy_World.jpg/"] // Get somehow
+    // var imageUrls = getImageUrls(this.closest('.' + CSS_MAP.post[0]).querySelectorAll(img));
+    var imageUrls = getImageUrls(this.closest('.' + CSS_MAP.post[0]).querySelector(".post_info").querySelectorAll("img"));
 
     // Send the message to the background script
-    chrome.runtime.sendMessage({action: "jszip", images: imageUrls, text: postText }, 
-        function(response) {
-            console.log(response.zip);
+    chrome.runtime.sendMessage({ action: "jszip", images: imageUrls, text: postText },
+        function (response) {
             const zipBlob = base64ToBlob(response.zip)
-            console.log(zipBlob);
             const url = URL.createObjectURL(zipBlob);
             download(url, "placeholder" + ".zip");
         })
@@ -105,7 +102,7 @@ function processText(text) {
 }
 
 
-// Tech
+// ====Tech
 function getCssMap() {
     let css_map = {};
 
@@ -127,7 +124,7 @@ function getCssMap() {
             css_map = {
                 mainFeed: ['feed_rows', 'page_wall_posts'],
                 post: ['_post', 'post'],
-                img: ['RoN4R', 'tPU70', 'xhGbM'],
+                img: ['img', 'RoN4R', 'tPU70', 'xhGbM'],
                 imgSource: 'eqBap',
                 buttonContainer: 'ui_actions_menu',
                 buttonStyle: 'ui_actions_menu_item',
@@ -165,16 +162,16 @@ function throttle(func, delay) {
 
 function download(url, filename) {
     fetch(url, {
-        mode: 'no-cors' 
+        mode: 'no-cors'
     }).then((transfer) => {
-        return transfer.blob();                 
+        return transfer.blob();
     }).then((bytes) => {
-        let elm = document.createElement('a'); 
-        elm.href = URL.createObjectURL(bytes); 
-        elm.setAttribute('download', filename); 
-        elm.click()                            
+        let elm = document.createElement('a');
+        elm.href = URL.createObjectURL(bytes);
+        elm.setAttribute('download', filename);
+        elm.click()
     }).catch((error) => {
-        console.log(error);                    
+        console.log(error);
     })
 }
 
@@ -188,8 +185,55 @@ function base64ToBlob(base64String) {
     for (let i = 0; i < dataLength; ++i) {
         byteArray[i] = data.charCodeAt(i);
     }
-    const blob = new Blob([byteArray], {type: "application/zip"});
+    const blob = new Blob([byteArray], { type: "application/zip" });
     return blob;
+}
+
+function getImageUrls(imgNodes) {
+    var urls = [];
+    // var className;
+
+    console.log(imgNodes);
+
+    imgNodes = filterNodeList(imgNodes, "AvatarRich__img"); // imgNodes is array now
+
+    // if (/MediaGrid/.test(imgNodes[0].className))
+    // {
+    //     className = "MediaGrid__interactive";
+    // }
+    // if (/PhotoPrimaryAttachment/.test(imgNodes[0].className))
+    // {
+    //     className = "PhotoPrimaryAttachment__interactive";
+    // }
+
+    console.log(imgNodes);
+    // console.log(className);
+
+    imgNodes.forEach(img => {
+        console.log(img);
+        // let imgTemp = img.closest("." + className).getAttribute("data-options");
+        const imgString = img.parentNode.getAttribute("data-options");
+        const imgJson = JSON.parse(imgString);
+        urls.push(imgJson.temp.w_);
+    });
+    console.log(urls);
+    return urls;
+}
+
+// Removes element from node list if there is a match
+function filterNodeList(nodeList, className) {
+    var newlist = Array.from(nodeList);
+
+    for (let i = newlist.length - 1; i >= 0; i--) {
+        const element = newlist[i];
+        if (element.classList.contains(className)) {
+            const index = newlist.indexOf(element);
+            if (index > -1) {
+                newlist.splice(index, 1);
+            }
+        }
+    }
+    return newlist;
 }
 
 //TODO: Track page change? When URL change https://vk.com/feed resetr first_scan | FOR VK
