@@ -6,16 +6,13 @@
 const ACTIVE_SITE = location.host;
 const CSS_MAP = getCssMap();
 
+setInterval(function()
+{
+    console.log("WORKING");
+    btn_inject_base();
+}, 5000);
+
 // ====MainApp
-// const throttledInject = throttle(btn_inject_base, 200);
-// if (location.host + location.pathname == "vk.com/feed") { btnFeedClass = 0 }
-// else { btnFeedClass = 1 };
-document.addEventListener("DOMContentLoaded", () => { document.querySelectorAll(CSS_MAP.mainFeed[0])[0].addEventListener('DOMSubtreeModified', throttle(btn_inject_base, 200)) });
-window.addEventListener('locationchange', function () {
-    alert('location changed!');
-});
-// document.addEventListener("DOMContentLoaded", btn_inject_base);
-// document.querySelectorAll('.' + CSS_MAP.mainFeed[0])[0].addEventListener('DOMSubtreeModified', throttle(btn_inject_base, 200));
 btn_inject_base();
 
 
@@ -38,7 +35,14 @@ function btn_inject_base() {
 }
 
 function inject_vk(post) {
-    post.setAttribute('postsaver_id:', Math.random().toString(16).slice(2)) // Generate custom post id
+    console.log('Inject');
+
+    if (post.hasAttribute('postsaver_id'))
+    {
+        return;
+    }
+
+    post.setAttribute('postsaver_id', Math.random().toString(16).slice(2)) // Generate custom post id
     var postText = post.querySelectorAll('.' + CSS_MAP.postText)[0];
     if (postText) {
         postText.classList.add('postsaver_postText');
