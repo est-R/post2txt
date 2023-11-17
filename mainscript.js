@@ -78,6 +78,7 @@ function inject_tumblr(post) {
 
 // ====SAVE
 function btn_save() {
+    //TODO: Uncaught TypeError: Cannot read properties of undefined (reading 'innerHTML') -> null check + tick + same for img
     var postText = this.closest('.' + CSS_MAP.post[0]).querySelectorAll('.' + CSS_MAP.postText)[0].innerHTML;
     postText = processText(postText);
 
@@ -91,7 +92,7 @@ function btn_save() {
             const zipBlob = base64ToBlob(response.zip)
             const url = URL.createObjectURL(zipBlob);
             download(url, "placeholder" + ".zip");
-        })
+        });
 }
 
 
@@ -197,9 +198,11 @@ function getImageUrls(imgNodes) {
     var urls = [];
     // var className;
 
-    console.log(imgNodes);
+    // console.log(imgNodes);
 
     imgNodes = filterNodeList(imgNodes, "AvatarRich__img"); // imgNodes is array now
+    imgNodes = filterNodeList(imgNodes, "emoji");
+    imgNodes = filterNodeList(imgNodes, "image_status__statusImage");
 
     // if (/MediaGrid/.test(imgNodes[0].className))
     // {
@@ -209,18 +212,17 @@ function getImageUrls(imgNodes) {
     // {
     //     className = "PhotoPrimaryAttachment__interactive";
     // }
-
-    console.log(imgNodes);
+    // console.log(imgNodes);
     // console.log(className);
 
     imgNodes.forEach(img => {
-        console.log(img);
+        console.log("IMG: " + img);
         // let imgTemp = img.closest("." + className).getAttribute("data-options");
-        const imgString = img.parentNode.getAttribute("data-options");
+        const imgString = replaceEscChars(img.parentNode.getAttribute("data-options"));
         const imgJson = JSON.parse(imgString);
         urls.push(imgJson.temp.w_);
     });
-    console.log(urls);
+    console.log("URLS: " + urls);
     return urls;
 }
 
@@ -240,5 +242,17 @@ function filterNodeList(nodeList, className) {
     return newlist;
 }
 
+function replaceEscChars(string) {
+    let replacements = {
+      "&amp;" : "&",
+      "&lt;" : "<",
+      "&gt;" : ">",
+      "&quot;" : '"',
+      "&apos;" : "'"
+    }
+    return string.replaceAll(/(&amp;|&lt;|&gt;|&quot;|&apos;)/gi, function(replTo) {
+      return replacements[replTo];
+    });
+    }
 //TODO: Track page change? When URL change https://vk.com/feed resetr first_scan | FOR VK
 // Tumblrr, Facebook, blogpost, twitter, instagramm
