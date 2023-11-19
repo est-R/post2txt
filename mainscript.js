@@ -16,9 +16,12 @@ setInterval(function()
 btn_inject_base();
 
 
+///////////////
+
 // ====ButtonInjection
 function btn_inject_base() {
     let posts = document.querySelectorAll('.' + CSS_MAP.post[0]);
+    // console.log(posts);
 
     switch (ACTIVE_SITE) {
         case ('vk.com'):
@@ -62,29 +65,45 @@ function inject_vk(post) {
 }
 
 function inject_tumblr(post) {
-    post.setAttribute('postsaver_id:', Math.random().toString(16).slice(2)) // Generate custom post id
-    var buttonContainer = post.querySelectorAll('.' + CSS_MAP.buttonContainer)[2]; // [2], because anything in footer of a post has the same class
+    if (post.hasAttribute('postsaver_id'))
+    {
+        return;
+    }
+
+    var buttonContainer= post.querySelectorAll('.' + CSS_MAP.buttonContainer)[0];
     if (buttonContainer == null) {
         return;
     }
 
     var btn = document.createElement('div');
-    btn.innerHTML += 'SAVE';
+    btn.innerHTML += 'СКАЧАТЬ';
+    btn.style.cursor = 'pointer';
     btn.classList.add(CSS_MAP.buttonStyle);
     btn.classList.add('postsaver_btn');
-    buttonContainer.appendChild(btn);
-    buttonContainer.querySelectorAll(".postsaver_btn")[0].addEventListener("click", btn_save);
+    var btnWrapper = buttonContainer.querySelector('.' + CSS_MAP.buttonWrapper[0]);
+    btnWrapper.appendChild(btn);
+    btnWrapper.querySelectorAll(".postsaver_btn")[0].addEventListener("click", btn_save);
+
+    
+    post.setAttribute('postsaver_id', Math.random().toString(16).slice(2)) // Generate custom post id
+    var postText = post.querySelectorAll('.' + CSS_MAP.postText);
+    if (postText) {
+        postText.forEach(textBlock => {textBlock.classList.add('postsaver_postText')});
+    }
+    console.log("INJECTED TMBLR");
+
 }
 
 // ====SAVE
 function btn_save() {
     //TODO: Uncaught TypeError: Cannot read properties of undefined (reading 'innerHTML') -> null check + tick + same for img
-    var postText = this.closest('.' + CSS_MAP.post[0]).querySelectorAll('.' + CSS_MAP.postText)[0].innerHTML;
-    postText = processText(postText);
+    var postTextRAW = this.closest('.' + CSS_MAP.post[0]).querySelectorAll(".postsaver_postText");
+    
+    postText = processText(textConvertRaw2Str(postTextRAW));
 
     // var imageUrls = ["https://static.wikia.nocookie.net/aesthetics/images/c/cd/Fantasy_World.jpg/"] // Get somehow
     // var imageUrls = getImageUrls(this.closest('.' + CSS_MAP.post[0]).querySelectorAll(img));
-    var imageUrls = getImageUrls(this.closest('.' + CSS_MAP.post[0]).querySelector(".post_info").querySelectorAll("img"));
+    var imageUrls = getImageUrls(this.closest('.' + CSS_MAP.post[0]).querySelector('.' + CSS_MAP.postContent[0]).querySelectorAll("img"));
 
     // Send the message to the background script
     chrome.runtime.sendMessage({ action: "jszip", images: imageUrls, text: postText },
@@ -93,6 +112,18 @@ function btn_save() {
             const url = URL.createObjectURL(zipBlob);
             download(url, "placeholder" + ".zip");
         });
+}
+
+
+function textConvertRaw2Str(textNodelist)
+{
+    let processedText = '';
+
+    textNodelist.forEach(textBlock => {
+        processedText += textBlock.innerHTML + "\n\n"
+    })
+
+    return processedText;
 }
 
 
@@ -115,13 +146,16 @@ function getCssMap() {
         case "www.tumblr.com":
             css_map = {
                 mainFeed: ['j8ha0', 'gPQR5', 'FGfuE'],
-                post: 'FtjPK',
+                post: ['rZlUD', 'KYCZY', 'F4Tcn'],
                 img: ['RoN4R', 'tPU70', 'xhGbM'],
                 imgSource: 'eqBap',
-                buttonContainer: 'MCavR',
+                buttonContainer: 'tOKgq',
+                buttonMenuStyle: 'X1uIE',
+                buttonMenu: 'iaJAj',
                 buttonStyle: 'sfGru',
-                buttonWrapper: ['tOKgq', 'eIaSl'],
+                buttonWrapper: ['MCavR', 'eIaSl'],
                 tags: 'hAFp3',
+                postContent: ['LaNUG'],
                 postText: 'k31gt'
             };
             break;
@@ -134,7 +168,7 @@ function getCssMap() {
                 buttonContainer: 'ui_actions_menu',
                 buttonStyle: 'ui_actions_menu_item',
                 buttonWrapper: ['ui_actions_menu_wrap'],
-                postContent: '_post_content',
+                postContent: ['post_info', '_post_content'],
                 postText: 'wall_post_text'
             };
             break;
@@ -218,9 +252,24 @@ function getImageUrls(imgNodes) {
     imgNodes.forEach(img => {
         console.log("IMG: " + img);
         // let imgTemp = img.closest("." + className).getAttribute("data-options");
-        const imgString = replaceEscChars(img.parentNode.getAttribute("data-options"));
-        const imgJson = JSON.parse(imgString);
-        urls.push(imgJson.temp.w_);
+
+        switch (ACTIVE_SITE) {
+            case ('vk.com'):
+        {
+            const imgString = replaceEscChars(img.parentNode.getAttribute("data-options"));
+            const imgJson = JSON.parse(imgString);
+            urls.push(imgJson.temp.w_);
+            break;
+        }
+        case ('www.tumblr.com'):
+            {
+                const imgString = replaceEscChars(img.getAttribute("srcset"));
+                let url = "https" + imgString.split('https').pop();
+                url = url.split(' ').shift();
+                urls.push(url);
+                break;
+            }
+        }
     });
     console.log("URLS: " + urls);
     return urls;
