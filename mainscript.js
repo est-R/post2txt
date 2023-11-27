@@ -5,10 +5,12 @@
 
 const ACTIVE_SITE = location.host;
 const CSS_MAP = getCssMap();
+var LOCALIZATION;
+loadLocalization('ru');
 
 setInterval(function()
 {
-    console.log("WORKING");
+    // console.log("WORKING");
     btn_inject_base();
 }, 5000);
 
@@ -38,7 +40,7 @@ function btn_inject_base() {
 }
 
 function inject_vk(post) {
-    console.log('Inject');
+    // console.log('Inject');
 
     if (post.hasAttribute('postsaver_id'))
     {
@@ -177,7 +179,6 @@ function getCssMap() {
     return css_map;
 }
 
-
 function throttle(func, delay) {
     let timeoutId;
     let lastExecutedTime = 0;
@@ -303,5 +304,24 @@ function replaceEscChars(string) {
       return replacements[replTo];
     });
     }
-//TODO: Track page change? When URL change https://vk.com/feed resetr first_scan | FOR VK
-// Tumblrr, Facebook, blogpost, twitter, instagramm
+
+
+// Localization
+function openLocalizationFile(lang)
+{
+    return new Promise((resolve, reject) => {
+        fetch(chrome.runtime.getURL('localization/' + lang + '.json'))
+          .then(response => response.json())
+          .then(data => resolve(data))
+          .catch(error => reject(error));
+      });
+}
+
+async function loadLocalization(lang) {
+    try {
+      const data = await openLocalizationFile(lang);
+      LOCALIZATION = data;
+    } catch (error) {
+        console.log("Failed to load localization file");
+    }
+  }

@@ -17,7 +17,10 @@
       },
       "web_accessible_resources": [
         {
-          "resources": ["./assets/dropDownNode.html"],
+          "resources": [
+            "assets/dropDownNode.html",
+            "localization/*"
+          ],
           "matches": ["<all_urls>"]
         }
       ],
@@ -25,9 +28,6 @@
         {
             "matches": [
             "https://vk.com/*",
-            "https://twitter.com/*",
-            "https://www.facebook.com/*",
-            "https://www.instagram.com/*",
             "https://www.tumblr.com/*"
           ],
             "js": ["mainscript.js"]
@@ -42,9 +42,6 @@
     ],
     "host_permissions": [
     	"https://vk.com/*",
-	    "https://twitter.com/*",
-	    "https://www.facebook.com/*",
-	    "https://www.instagram.com/*",
       "https://www.tumblr.com/*"
     ]
 }
