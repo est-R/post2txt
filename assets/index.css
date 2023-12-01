@@ -1,0 +1,43 @@
+body {
+    height: 120px; 
+    width: 230px; 
+    display: flex; 
+    align-items: stretch; 
+    justify-content: space-around;
+    flex-direction: column;
+}
+
+table {
+    text-align: center;
+}
+
+#lang-wrapper {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.lang {
+    width: 47px;
+    height: 27px;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+.lang-en {
+    background-image: url("/assets/en-flag.png");
+}
+
+.lang-ru {
+    background-image: url("/assets/ru-flag.png");
+}
+
+.lang-checked {
+    border: 1px;
+    border-color: greenyellow;
+}
+
+.lang-unchecked {
+    border: none;
+}

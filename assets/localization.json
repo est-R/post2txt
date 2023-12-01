@@ -1,0 +1,15 @@
+{
+  "en": {
+      "ON": "ON",
+      "OFF": "OFF",
+      "Text": "Text",
+      "Images": "Images"
+
+  },
+  "ru": {
+      "ON": "ВКЛ",
+      "OFF": "ВЫКЛ",
+      "Text": "Текст",
+      "Images": "Изображения"
+  }
+}
