@@ -1,15 +1,28 @@
-// const settings = {
-// 	'context_menu': true,
-// 	'hide_filtered_content': false,
-// };
+// Default
+var SETTINGS =
+{
+    language: 'en',
+    vkText: true,
+    vkImages: true,
+    tumblrText: true,
+    tumblrImages: true
+}
+
+var LOCALIZATION;
+(async function () {
+    await getSettings(SETTINGS);
+    console.log(SETTINGS);
+    await loadLocalization().then(() => {
+    });
+}());
 
 const ACTIVE_SITE = location.host;
 const CSS_MAP = getCssMap();
-var LOCALIZATION;
-loadLocalization('ru');
 
 setInterval(function()
 {
+    // async?
+    getSettings(SETTINGS);
     // console.log("WORKING");
     btn_inject_base();
 }, 5000);
@@ -99,13 +112,17 @@ function inject_tumblr(post) {
 // ====SAVE
 function btn_save() {
     //TODO: Uncaught TypeError: Cannot read properties of undefined (reading 'innerHTML') -> null check + tick + same for img
-    var postTextRAW = this.closest('.' + CSS_MAP.post[0]).querySelectorAll(".postsaver_postText");
-    
-    postText = processText(textConvertRaw2Str(postTextRAW));
+    var postTextRAW = '';
+    var post = this.closest('.' + CSS_MAP.post[0]);
 
-    // var imageUrls = ["https://static.wikia.nocookie.net/aesthetics/images/c/cd/Fantasy_World.jpg/"] // Get somehow
-    // var imageUrls = getImageUrls(this.closest('.' + CSS_MAP.post[0]).querySelectorAll(img));
+    if (post !== null) {
+        postTextRAW = this.closest('.' + CSS_MAP.post[0]).querySelectorAll(".postsaver_postText");
+        postText = processText(textConvertRaw2Str(postTextRAW));
+    }
+
     var imageUrls = getImageUrls(this.closest('.' + CSS_MAP.post[0]).querySelector('.' + CSS_MAP.postContent[0]).querySelectorAll("img"));
+
+    console.log('img 2: ' + imageUrls);
 
     // Send the message to the background script
     chrome.runtime.sendMessage({ action: "jszip", images: imageUrls, text: postText },
@@ -233,11 +250,12 @@ function getImageUrls(imgNodes) {
     var urls = [];
     // var className;
 
-    // console.log(imgNodes);
+    console.log("ImageNodes: ", imgNodes);
 
     imgNodes = filterNodeList(imgNodes, "AvatarRich__img"); // imgNodes is array now
     imgNodes = filterNodeList(imgNodes, "emoji");
     imgNodes = filterNodeList(imgNodes, "image_status__statusImage");
+    imgNodes = filterNodeList(imgNodes, "sticker_img");
 
     // if (/MediaGrid/.test(imgNodes[0].className))
     // {
@@ -251,7 +269,7 @@ function getImageUrls(imgNodes) {
     // console.log(className);
 
     imgNodes.forEach(img => {
-        console.log("IMG: " + img);
+        console.log("IMG: ", img);
         // let imgTemp = img.closest("." + className).getAttribute("data-options");
 
         switch (ACTIVE_SITE) {
@@ -306,22 +324,28 @@ function replaceEscChars(string) {
     }
 
 
-// Localization
-function openLocalizationFile(lang)
-{
-    return new Promise((resolve, reject) => {
-        fetch(chrome.runtime.getURL('localization/' + lang + '.json'))
-          .then(response => response.json())
-          .then(data => resolve(data))
-          .catch(error => reject(error));
-      });
+// // Localization and storage
+// function openLocalizationFile(lang)
+// {
+//     return new Promise((resolve, reject) => {
+//         fetch(chrome.runtime.getURL('localization/' + lang + '.json'))
+//           .then(response => response.json())
+//           .then(data => resolve(data))
+//           .catch(error => reject(error));
+//       });
+// }
+
+async function loadLocalization() {
+    chrome.runtime.sendMessage({message: 'loadLocalization'}, response => {
+        LOCALIZATION = response.data;
+    });
 }
 
-async function loadLocalization(lang) {
-    try {
-      const data = await openLocalizationFile(lang);
-      LOCALIZATION = data;
-    } catch (error) {
-        console.log("Failed to load localization file");
-    }
+async function getSettings(settings) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({message: 'getSettings', settings: settings}, response => {
+        resolve(response.data);
+      });
+    }).then((data) => {SETTINGS = data}
+    );
   }

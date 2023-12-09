@@ -19,7 +19,9 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       console.error("Error fetching image:", error);
     }
   })).then(async function () {
-    zip.file("text.txt", text);
+    // Add text to zip only if it's not empty
+    if (text !== '')
+    {zip.file("text.txt", text);}
     const content = await zip.generateAsync({ type: "blob" });
     // Send the response blob back to the content script
     const base64String = await blobToBase64(content);
@@ -49,3 +51,33 @@ function wait(milliseconds){
       setTimeout(resolve, milliseconds);
   });
 }
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.message === 'loadLocalization') {
+      fetch(chrome.runtime.getURL('/assets/localization.json'))
+          .then(response => response.json())
+          .then(data => sendResponse({data: data}))
+          .catch(error => console.error(error));
+      return true;
+  }
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.message === 'getSettings') {
+    var tempSettings = request.settings;
+    let promises = [];
+    for (let elem in request.settings) {
+      promises.push(new Promise((resolve, reject) => {
+        chrome.storage.sync.get(elem, function (data) {
+          if (data[elem] === undefined) { resolve(); }
+          tempSettings[elem] = data[elem];
+          resolve();
+        });
+      }));
+    }
+    Promise.all(promises)
+      .then(() => sendResponse({data: tempSettings}))
+      .catch(error => console.error(error));
+    return true;  // Will respond asynchronously.
+  }
+});
