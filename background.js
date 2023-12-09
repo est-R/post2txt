@@ -1,5 +1,10 @@
 import './lib/jszip.min.js';
 
+// () =>
+// {
+
+// }
+
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (message.action != 'jszip') { return false }
   // Create a zip file using JSZip
@@ -9,8 +14,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   var text = message.text;
   // Add images to the zip
   Promise.all(images.map(async function (imageUrl, index) {
-    console.log("Status: 3");
-    console.log("Index: " + index);
+    // console.log("Status: 3");
+    // console.log("Index: " + index);
     try {
       const response = await fetch(imageUrl)
       const blob = await response.blob();
@@ -30,7 +35,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   }).catch(function (error) {
     console.error('Error processing images:', error);
   });
-  console.log("Status: 4");
+  // console.log("Status: 4");
   return true;
 });
 
@@ -42,13 +47,6 @@ function blobToBase64(blob) {
     reader.onloadend = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(blob);
-  });
-}
-
-// Wait
-function wait(milliseconds){
-  return new Promise(resolve => {
-      setTimeout(resolve, milliseconds);
   });
 }
 
@@ -78,6 +76,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     Promise.all(promises)
       .then(() => sendResponse({data: tempSettings}))
       .catch(error => console.error(error));
-    return true;  // Will respond asynchronously.
+    return true;
   }
 });

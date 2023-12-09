@@ -3,13 +3,15 @@
       "ON": "ON",
       "OFF": "OFF",
       "Text": "Text",
-      "Images": "Images"
+      "Images": "Images",
+      "Download": "Download post"
 
   },
   "ru": {
       "ON": "ВКЛ",
       "OFF": "ВЫКЛ",
       "Text": "Текст",
-      "Images": "Изображения"
+      "Images": "Изображения",
+      "Download": "Скачать пост"
   }
 }

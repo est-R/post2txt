@@ -8,28 +8,24 @@ var SETTINGS =
     tumblrImages: true
 }
 
+//
+const ACTIVE_SITE = location.host;
+const CSS_MAP = getCssMap();
+var textToggle = true;
+var imagesToggle = true;
+
 var LOCALIZATION;
 (async function () {
     await getSettings(SETTINGS);
-    console.log(SETTINGS);
+    // console.log(SETTINGS);
     await loadLocalization().then(() => {
     });
-}());
-
-const ACTIVE_SITE = location.host;
-const CSS_MAP = getCssMap();
-
-setInterval(function()
-{
-    // async?
-    getSettings(SETTINGS);
-    // console.log("WORKING");
-    btn_inject_base();
-}, 5000);
-
-// ====MainApp
-btn_inject_base();
-
+}()).then(
+    setInterval(async () => {
+        await getSettings(SETTINGS);
+        btn_inject_base();
+    }, 3000)
+);
 
 ///////////////
 
@@ -41,11 +37,15 @@ function btn_inject_base() {
     switch (ACTIVE_SITE) {
         case ('vk.com'):
             {
+                textToggle = SETTINGS.vkText;
+                imagesToggle = SETTINGS.vkImages;
                 posts.forEach(post => inject_vk(post));
                 break;
             }
         case ('www.tumblr.com'):
             {
+                textToggle = SETTINGS.tumblrText;
+                imagesToggle = SETTINGS.tumblrImages;
                 posts.forEach(post => inject_tumblr(post));
                 break;
             }
@@ -57,10 +57,13 @@ function inject_vk(post) {
 
     if (post.hasAttribute('postsaver_id'))
     {
+        checkLang(post);
         return;
     }
 
     post.setAttribute('postsaver_id', Math.random().toString(16).slice(2)) // Generate custom post id
+    post.setAttribute('postsaver_lang', SETTINGS.language);
+
     var postText = post.querySelectorAll('.' + CSS_MAP.postText)[0];
     if (postText) {
         postText.classList.add('postsaver_postText');
@@ -72,7 +75,7 @@ function inject_vk(post) {
     }
 
     var btn = document.createElement('a');
-    btn.innerHTML += 'Скачать пост';
+    btn.innerHTML += LOCALIZATION[SETTINGS.language].Download;
     btn.classList.add(CSS_MAP.buttonStyle);
     btn.classList.add('postsaver_btn');
     buttonContainer.appendChild(btn);
@@ -80,42 +83,47 @@ function inject_vk(post) {
 }
 
 function inject_tumblr(post) {
-    if (post.hasAttribute('postsaver_id'))
+    if (post.hasAttribute('postsaver_id') && post.querySelectorAll(".postsaver_btn").length > 0)
     {
+        checkLang(post);
         return;
     }
 
-    var buttonContainer= post.querySelectorAll('.' + CSS_MAP.buttonContainer)[0];
+    var buttonContainer = post.querySelector(CSS_MAP.buttonContainer[1]);
     if (buttonContainer == null) {
         return;
     }
 
     var btn = document.createElement('div');
-    btn.innerHTML += 'СКАЧАТЬ';
+    btn.innerHTML += LOCALIZATION[SETTINGS.language].Download;
     btn.style.cursor = 'pointer';
     btn.classList.add(CSS_MAP.buttonStyle);
     btn.classList.add('postsaver_btn');
-    var btnWrapper = buttonContainer.querySelector('.' + CSS_MAP.buttonWrapper[0]);
+
+
+    var btnWrapper = buttonContainer.querySelectorAll('.' + CSS_MAP.buttonWrapper[1]);
+    btnWrapper = Array.from(btnWrapper).pop().querySelector('.' + CSS_MAP.buttonWrapper[0]);
     btnWrapper.appendChild(btn);
     btnWrapper.querySelectorAll(".postsaver_btn")[0].addEventListener("click", btn_save);
 
     
     post.setAttribute('postsaver_id', Math.random().toString(16).slice(2)) // Generate custom post id
+    post.setAttribute('postsaver_lang', SETTINGS.language);
     var postText = post.querySelectorAll('.' + CSS_MAP.postText);
     if (postText) {
         postText.forEach(textBlock => {textBlock.classList.add('postsaver_postText')});
     }
-    console.log("INJECTED TMBLR");
+    // console.log("INJECTED TMBLR");
 
 }
 
 // ====SAVE
 function btn_save() {
-    //TODO: Uncaught TypeError: Cannot read properties of undefined (reading 'innerHTML') -> null check + tick + same for img
+    var postText = '';
     var postTextRAW = '';
     var post = this.closest('.' + CSS_MAP.post[0]);
 
-    if (post !== null) {
+    if (textToggle === true && post !== null) {
         postTextRAW = this.closest('.' + CSS_MAP.post[0]).querySelectorAll(".postsaver_postText");
         postText = processText(textConvertRaw2Str(postTextRAW));
     }
@@ -124,13 +132,21 @@ function btn_save() {
 
     console.log('img 2: ' + imageUrls);
 
+    if (imagesToggle && imageUrls.length > 0)
+    {
     // Send the message to the background script
     chrome.runtime.sendMessage({ action: "jszip", images: imageUrls, text: postText },
         function (response) {
             const zipBlob = base64ToBlob(response.zip)
             const url = URL.createObjectURL(zipBlob);
-            download(url, "placeholder" + ".zip");
+            download(url, "post.zip");
         });
+    } else if (textToggle && !imagesToggle) {
+        console.log(postText);
+        const txtBlob = new Blob([postText], { type: "text/plain" });
+        const textUrl = URL.createObjectURL(txtBlob);
+        download(textUrl, "post.txt");
+    }
 }
 
 
@@ -168,11 +184,11 @@ function getCssMap() {
                 post: ['rZlUD', 'KYCZY', 'F4Tcn'],
                 img: ['RoN4R', 'tPU70', 'xhGbM'],
                 imgSource: 'eqBap',
-                buttonContainer: 'tOKgq',
+                buttonContainer: ['tOKgq', 'footer'],
                 buttonMenuStyle: 'X1uIE',
                 buttonMenu: 'iaJAj',
                 buttonStyle: 'sfGru',
-                buttonWrapper: ['MCavR', 'eIaSl'],
+                buttonWrapper: ['MCavR', 'm5KTc'],
                 tags: 'hAFp3',
                 postContent: ['LaNUG'],
                 postText: 'k31gt'
@@ -250,34 +266,28 @@ function getImageUrls(imgNodes) {
     var urls = [];
     // var className;
 
-    console.log("ImageNodes: ", imgNodes);
+    // console.log("ImageNodes 01: ", imgNodes);
 
+    // If the filter fails to remove junk the replaceEscChars() will fail !!!!!!!
+    // TODO: make filterlist 
     imgNodes = filterNodeList(imgNodes, "AvatarRich__img"); // imgNodes is array now
     imgNodes = filterNodeList(imgNodes, "emoji");
     imgNodes = filterNodeList(imgNodes, "image_status__statusImage");
     imgNodes = filterNodeList(imgNodes, "sticker_img");
-
-    // if (/MediaGrid/.test(imgNodes[0].className))
-    // {
-    //     className = "MediaGrid__interactive";
-    // }
-    // if (/PhotoPrimaryAttachment/.test(imgNodes[0].className))
-    // {
-    //     className = "PhotoPrimaryAttachment__interactive";
-    // }
-    // console.log(imgNodes);
-    // console.log(className);
+    imgNodes = filterNodeList(imgNodes, "PhotoPrimaryAttachment__background");
+    
+    // console.log("ImageNodes 02: ", imgNodes);
 
     imgNodes.forEach(img => {
-        console.log("IMG: ", img);
-        // let imgTemp = img.closest("." + className).getAttribute("data-options");
+        // console.log("IMG: ", img);
 
         switch (ACTIVE_SITE) {
             case ('vk.com'):
         {
             const imgString = replaceEscChars(img.parentNode.getAttribute("data-options"));
             const imgJson = JSON.parse(imgString);
-            urls.push(imgJson.temp.w_);
+            console.log(imgJson);
+            urls.push(getBestResolutionSource(imgJson));
             break;
         }
         case ('www.tumblr.com'):
@@ -290,7 +300,7 @@ function getImageUrls(imgNodes) {
             }
         }
     });
-    console.log("URLS: " + urls);
+    // console.log("URLS: " + urls);
     return urls;
 }
 
@@ -341,11 +351,43 @@ async function loadLocalization() {
     });
 }
 
-async function getSettings(settings) {
+async function getSettings() {
     return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({message: 'getSettings', settings: settings}, response => {
+      chrome.runtime.sendMessage({message: 'getSettings', settings: SETTINGS}, response => {
         resolve(response.data);
       });
-    }).then((data) => {SETTINGS = data}
+    }).then((data) => {
+        for (let elem in data)
+        {
+            SETTINGS[elem] = data[elem];
+        }}
     );
   }
+
+  function checkLang(post)
+  {
+    const button = post.querySelector(".postsaver_btn");
+    
+    if (!button && !post.hasAttribute('postsaver_lang'))
+    {
+        return;
+    }
+
+    if (post.getAttribute('postsaver_lang') !== SETTINGS.language)
+    {
+        post.setAttribute('postsaver_lang', SETTINGS.language);
+        button.innerHTML = LOCALIZATION[SETTINGS.language].Download;
+    }
+  }
+
+  function getBestResolutionSource(json) {
+    var resolutions = ['w_', 'z_', 'y_', 'x_']
+
+    for (let i = 0; i < resolutions.length; i++) {
+        if (json.temp[resolutions[i]] !== undefined) {
+            return json.temp[resolutions[i]];
+        }
+    }
+
+    return '';
+}
