@@ -119,11 +119,13 @@ function inject_tumblr(post) {
 
 // ====SAVE
 function btn_save() {
+    if (!textToggle && !imagesToggle) return;
+
     var postText = '';
     var postTextRAW = '';
     var post = this.closest('.' + CSS_MAP.post[0]);
 
-    if (textToggle === true && post !== null) {
+    if (textToggle && post !== null) {
         postTextRAW = this.closest('.' + CSS_MAP.post[0]).querySelectorAll(".postsaver_postText");
         postText = processText(textConvertRaw2Str(postTextRAW));
     }
@@ -141,7 +143,9 @@ function btn_save() {
             const url = URL.createObjectURL(zipBlob);
             download(url, "post.zip");
         });
-    } else if (textToggle && !imagesToggle) {
+    } else if (textToggle) {
+        if (postText === '') return;
+
         console.log(postText);
         const txtBlob = new Blob([postText], { type: "text/plain" });
         const textUrl = URL.createObjectURL(txtBlob);
@@ -275,29 +279,37 @@ function getImageUrls(imgNodes) {
     imgNodes = filterNodeList(imgNodes, "image_status__statusImage");
     imgNodes = filterNodeList(imgNodes, "sticker_img");
     imgNodes = filterNodeList(imgNodes, "PhotoPrimaryAttachment__background");
+    imgNodes = filterNodeList(imgNodes, "LinkImage-module__photo--Fjw9c");
+    imgNodes = filterNodeList(imgNodes, "Overlay-module__root--FzKhf");
     
     // console.log("ImageNodes 02: ", imgNodes);
 
     imgNodes.forEach(img => {
         // console.log("IMG: ", img);
 
-        switch (ACTIVE_SITE) {
-            case ('vk.com'):
-        {
-            const imgString = replaceEscChars(img.parentNode.getAttribute("data-options"));
-            const imgJson = JSON.parse(imgString);
-            console.log(imgJson);
-            urls.push(getBestResolutionSource(imgJson));
-            break;
-        }
-        case ('www.tumblr.com'):
-            {
-                const imgString = replaceEscChars(img.getAttribute("srcset"));
-                let url = "https" + imgString.split('https').pop();
-                url = url.split(' ').shift();
-                urls.push(url);
-                break;
+        // try/catch here probably makes filterNodeList() unnecessary
+        try {
+            switch (ACTIVE_SITE) {
+                case ('vk.com'):
+                    {
+                        const imgString = replaceEscChars(img.parentNode.getAttribute("data-options"));
+                        const imgJson = JSON.parse(imgString);
+                        console.log(imgJson);
+                        urls.push(getBestResolutionSource(imgJson));
+                        break;
+                    }
+                case ('www.tumblr.com'):
+                    {
+                        const imgString = replaceEscChars(img.getAttribute("srcset"));
+                        let url = "https" + imgString.split('https').pop();
+                        url = url.split(' ').shift();
+                        urls.push(url);
+                        break;
+                    }
             }
+        }
+        catch {
+            return;
         }
     });
     // console.log("URLS: " + urls);

@@ -23,8 +23,8 @@ var localization;
     });
 }());
 
-document.getElementById("lang_wrapper").getElementsByClassName("lang-en")[0].addEventListener("click", function () { setLanguage('en'); });
-document.getElementById("lang_wrapper").getElementsByClassName("lang-ru")[0].addEventListener("click", function () { setLanguage('ru'); });
+document.getElementById("lang_wrapper").getElementsByClassName("lang-en")[0].addEventListener("click", function () { setLanguage(this, 'en'); });
+document.getElementById("lang_wrapper").getElementsByClassName("lang-ru")[0].addEventListener("click", function () { setLanguage(this, 'ru'); });
 document.querySelectorAll(".table_toggleable").forEach(element => {
     element.addEventListener("click", function () { toggleUIauto(this); });
 });
@@ -59,10 +59,10 @@ function toggleUI(div, target)
 
 // Adds the record to chrome extention settings
 // AND localizes the interface
-function setLanguage(lang) {
+function setLanguage(div, lang) {
     setSetting('language', lang, async function () {
         await getSettings().then(() => {
-            loadUI();
+            loadUI(div);
             switchLanguage(lang);
         })
     });
@@ -108,7 +108,7 @@ async function loadLocalization() {
 }
 
 // Changes the placeholders to the content depending on settings
-function loadUI()
+function loadUI(div)
 {
     document.querySelectorAll(".table_toggleable").forEach(element => {
         if (element.classList.contains('vkText'))
@@ -131,13 +131,18 @@ function loadUI()
             toggleUI(element, settings.tumblrImages);
         }
     });
+
+    resetLangUI();
+    
+    if (div) { div.classList.add('lang-selected'); }
+    else {document.querySelector('.lang-' + settings.language).classList.add('lang-selected');}
 }
 
-
-
-// function loadLocalization(lang)
-// {
-//     const json = require('localization/' + lang + '.json');
-
-//     return json;
-// }
+function resetLangUI()
+{
+    var allDivs = document.getElementsByClassName("lang");
+    allDivs = Array.from(allDivs)
+    allDivs.forEach(element => {
+        element.classList.remove('lang-selected');
+    })
+}
